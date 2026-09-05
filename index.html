@@ -49,6 +49,35 @@
     display:flex;
     flex-direction:column;
   }
+  @media(min-width:768px){
+    body{align-items:stretch;}
+    .phone{
+      max-width:100%;
+      flex-direction:row;
+      align-items:stretch;
+    }
+    .bottomnav{
+      position:sticky;top:0;
+      flex-direction:column;
+      width:200px;flex:none;
+      height:100vh;
+      border-top:none;border-right:1px solid var(--border);
+      padding:24px 12px;
+      justify-content:flex-start;gap:4px;
+      backdrop-filter:none;background:var(--surface);
+    }
+    .navbtn{
+      flex:none;flex-direction:row;
+      justify-content:flex-start;gap:10px;
+      padding:11px 14px;border-radius:12px;
+    }
+    .navbtn svg{width:18px;height:18px;flex:none;}
+    .navbtn .lbl{font-size:13px;font-weight:700;}
+    .appbar{position:sticky;top:0;z-index:5;}
+    .view-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+    .view{padding:28px 40px 60px;max-width:680px;}
+    footer.credit{padding:0 40px 20px;}
+  }
 
   /* app bar */
   .appbar{
@@ -282,6 +311,7 @@
     <div class="avatars-mini" id="miniAvatars"></div>
   </div>
 
+  <div class="view-wrap">
   <!-- FINE VIEW -->
   <div class="view" id="view-fine">
     <div class="section-title">Who missed it?</div>
@@ -390,6 +420,7 @@
   </div>
 
   <footer class="credit">synced to google sheets · <a href="#" id="sheetLink" target="_blank">open sheet</a></footer>
+  </div><!-- end .view-wrap -->
 </div>
 
 <script>
@@ -560,6 +591,7 @@ saveFineBtn.addEventListener('click', async ()=>{
     const data = await res.json();
     if(data.ok){
       showStatus(fineStatusBox,'ok','✓ Saved — ₹'+amount+' logged for '+selectedFineName);
+      pendingRefresh = true;
       resetFineForm();
     } else {
       showStatus(fineStatusBox,'err', data.error || 'Could not save, try again');
@@ -604,6 +636,7 @@ saveProgBtn.addEventListener('click', async ()=>{
     const data = await res.json();
     if(data.ok){
       showStatus(progStatusBox,'ok','✓ Logged '+selectedDifficulty+' solve for '+selectedProgName);
+      pendingRefresh = true;
       resetProgForm();
     } else {
       showStatus(progStatusBox,'err', data.error || 'Could not save, try again');
@@ -621,11 +654,17 @@ function resetProgForm(){
   setProgDate(0, document.getElementById('progTodayChip'));
 }
 
-function showStatus(box,type,msg){ box.className = 'toast ' + type; box.textContent = msg; }
+function showStatus(box,type,msg){
+  box.className = 'toast ' + type;
+  box.textContent = msg;
+  clearTimeout(box._hideTimer);
+  box._hideTimer = setTimeout(() => { box.className = 'toast'; box.textContent = ''; }, 3000);
+}
 
 /* ---------- dashboard ---------- */
 let allFines = [], allProgress = [];
 let activityFilter = 'all';
+let pendingRefresh = false; // true after a write — forces loader on next board open
 document.querySelectorAll('#activitySeg .seg-btn').forEach(el=>{
   el.addEventListener('click', ()=>{
     document.querySelectorAll('#activitySeg .seg-btn').forEach(s=>s.classList.remove('active'));
@@ -640,11 +679,12 @@ async function loadEntries(){
     listEl.innerHTML = '<div class="empty-state">Connect the sheet in SETUP.md to see entries</div>';
     return;
   }
-  // if we already have data, render it immediately (no flash/spinner)
-  // then silently fetch fresh data in the background
-  const hasData = MEMBERS.length > 0;
+  // after a write, always show loader so user sees their new entry load in
+  // otherwise render existing data instantly and update silently in background
+  const hasData = MEMBERS.length > 0 && !pendingRefresh;
   if(!hasData) showLoadingState();
   else renderDashboard();
+  pendingRefresh = false;
 
   try{
     const res = await fetch(GAS_URL + '?action=list&token=' + encodeURIComponent(ACCESS_TOKEN));
