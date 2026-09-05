@@ -276,7 +276,7 @@
       <div class="mark">₹</div>
       <div class="brand-text">
         <h1>LeetTracker</h1>
-        <p id="brandSubtitle">Alex · Sam · Jordan · Taylor</p>
+        <p id="brandSubtitle">Loading…</p>
       </div>
     </div>
     <div class="avatars-mini" id="miniAvatars"></div>
@@ -300,7 +300,7 @@
     <div class="amount-card">
       <div class="amount-left">
         <div class="lbl">Amount due</div>
-        <div class="amount-display"><span class="rs">₹</span><input type="number" id="amountInput" value="100" max="100" readonly></div>
+        <div class="amount-display"><span class="rs">₹</span><input type="number" id="amountInput" value="10" max="100" readonly></div>
       </div>
       <div class="edit-toggle" id="amountToggle"></div>
     </div>
@@ -396,9 +396,8 @@
 /* ======================================================
    CONFIG — paste your Apps Script Web App URL here
 ====================================================== */
-const SHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1SGoxpSrWmtJoNehfzHYasOvt0v3lZPowZYUmEUS4Gyk/edit?usp=sharing";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbza5Gf3GWIE5yh0OjCaoQmNVW1erIycyAop8FAmFkUxA827DkTzavlU6oZKXGWfHg-N/exec";
-  
+const SHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1SGoxpSrWmtJoNehfzHYasOvt0v3lZPowZYUmEUS4Gyk/edit?usp=sharing";
 // Must match the ACCESS_TOKEN script property you set in Apps Script
 // (Project Settings -> Script Properties). Leave blank only if you
 // deliberately left ACCESS_TOKEN unset on the backend too (open access).
@@ -523,7 +522,7 @@ const amountInput = document.getElementById('amountInput');
 amountToggle.addEventListener('click', ()=>{
   const on = amountToggle.classList.toggle('on');
   amountInput.readOnly = !on;
-  if(on){ amountInput.focus(); } else { amountInput.value = 100; }
+  if(on){ amountInput.focus(); } else { amountInput.value = 10; }
 });
 
 /* ---------- difficulty chips (progress) ---------- */
@@ -573,7 +572,7 @@ function resetFineForm(){
   fineNameGrid.querySelectorAll('.avatar-pick').forEach(p=>p.classList.remove('selected'));
   selectedFineName = null;
   document.getElementById('noteInput').value = '';
-  amountInput.value = 100; amountInput.readOnly = true; amountToggle.classList.remove('on');
+  amountInput.value = 10; amountInput.readOnly = true; amountToggle.classList.remove('on');
   setFineDate(-1, document.getElementById('fineYestChip'));
 }
 
@@ -641,7 +640,12 @@ async function loadEntries(){
     listEl.innerHTML = '<div class="empty-state">Connect the sheet in SETUP.md to see entries</div>';
     return;
   }
-  showLoadingState();
+  // if we already have data, render it immediately (no flash/spinner)
+  // then silently fetch fresh data in the background
+  const hasData = MEMBERS.length > 0;
+  if(!hasData) showLoadingState();
+  else renderDashboard();
+
   try{
     const res = await fetch(GAS_URL + '?action=list&token=' + encodeURIComponent(ACCESS_TOKEN));
     const data = await res.json();
@@ -655,7 +659,8 @@ async function loadEntries(){
     allProgress = data.progress || [];
     renderDashboard();
   }catch(err){
-    listEl.innerHTML = '<div class="empty-state">Could not load entries — pull to refresh</div>';
+    // if we already had data showing, silently ignore the error
+    if(!hasData) listEl.innerHTML = '<div class="empty-state">Could not load entries — pull to refresh</div>';
   }
 }
 
