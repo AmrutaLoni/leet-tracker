@@ -50,33 +50,10 @@
     flex-direction:column;
   }
   @media(min-width:768px){
-    body{align-items:stretch;}
-    .phone{
-      max-width:100%;
-      flex-direction:row;
-      align-items:stretch;
-    }
-    .bottomnav{
-      position:sticky;top:0;
-      flex-direction:column;
-      width:200px;flex:none;
-      height:100vh;
-      border-top:none;border-right:1px solid var(--border);
-      padding:24px 12px;
-      justify-content:flex-start;gap:4px;
-      backdrop-filter:none;background:var(--surface);
-    }
-    .navbtn{
-      flex:none;flex-direction:row;
-      justify-content:flex-start;gap:10px;
-      padding:11px 14px;border-radius:12px;
-    }
-    .navbtn svg{width:18px;height:18px;flex:none;}
-    .navbtn .lbl{font-size:13px;font-weight:700;}
-    .appbar{position:sticky;top:0;z-index:5;}
-    .view-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
-    .view{padding:28px 40px 60px;max-width:680px;}
-    footer.credit{padding:0 40px 20px;}
+    .phone{max-width:760px;}
+  }
+  @media(min-width:1024px){
+    .phone{max-width:960px;}
   }
 
   /* app bar */
@@ -295,14 +272,18 @@
 
   footer.credit{text-align:center;padding:10px 0 2px;font-size:10.5px;color:var(--muted);}
   footer.credit a{color:var(--muted);}
+  .sidebar-brand{display:none;}
 </style>
 </head>
 <body>
 <div class="phone">
 
+  <!-- MAIN COLUMN (appbar + views) -->
+  <div class="view-wrap">
+
   <div class="appbar">
     <div class="brand">
-      <div class="mark">₹</div>
+      <div class="mark">LT</div>
       <div class="brand-text">
         <h1>LeetTracker</h1>
         <p id="brandSubtitle">Loading…</p>
@@ -311,7 +292,6 @@
     <div class="avatars-mini" id="miniAvatars"></div>
   </div>
 
-  <div class="view-wrap">
   <!-- FINE VIEW -->
   <div class="view" id="view-fine">
     <div class="section-title">Who missed it?</div>
@@ -365,8 +345,8 @@
       <div class="diff-chip" data-d="Hard">Hard</div>
     </div>
 
-    <div class="section-title">Problem URL</div>
-    <input type="text" class="text-field" id="problemUrlInput" placeholder="https://leetcode.com/problems/...">
+    <div class="section-title">Problem URL <span style="color:var(--danger);font-size:11px;">required</span></div>
+    <input type="text" class="text-field" id="problemUrlInput" placeholder="https://leetcode.com/problems/two-sum/">
 
     <button class="cta progress-cta" id="saveProgBtn">
       <span class="spin"></span><span id="saveProgBtnLabel">Log progress →</span>
@@ -377,15 +357,15 @@
   <!-- DASHBOARD VIEW -->
   <div class="view active" id="view-board">
     <div class="hero-row">
-      <div class="hero-card fines">
-        <div class="hero-lbl">Fines collected</div>
-        <div class="hero-amt" id="totalAmt">₹0</div>
-        <div class="hero-sub" id="totalCount">0 entries</div>
-      </div>
       <div class="hero-card solved">
         <div class="hero-lbl">Problems solved</div>
         <div class="hero-amt" id="totalSolved">0</div>
         <div class="hero-sub" id="totalSolvedSub">0 entries</div>
+      </div>
+      <div class="hero-card fines">
+        <div class="hero-lbl">Fines collected</div>
+        <div class="hero-amt" id="totalAmt">₹0</div>
+        <div class="hero-sub" id="totalCount">0 entries</div>
       </div>
     </div>
 
@@ -404,6 +384,9 @@
     <div id="entriesList"></div>
   </div>
 
+  <footer class="credit">synced to google sheets</footer>
+  </div><!-- end .view-wrap -->
+
   <div class="bottomnav">
     <div class="navbtn progress-active" id="navProg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -419,8 +402,6 @@
     </div>
   </div>
 
-  <footer class="credit">synced to google sheets · <a href="#" id="sheetLink" target="_blank">open sheet</a></footer>
-  </div><!-- end .view-wrap -->
 </div>
 
 <script>
@@ -619,8 +600,12 @@ saveProgBtn.addEventListener('click', async ()=>{
   if(dateVal > todayISO()){ showStatus(progStatusBox,'err','Date can\'t be in the future'); return; }
   if(!selectedDifficulty){ showStatus(progStatusBox,'err','Pick a difficulty'); return; }
   const problemUrlVal = document.getElementById('problemUrlInput').value.trim();
-  if(problemUrlVal && !/^https?:\/\/.+\..+/.test(problemUrlVal)){
+  if(!problemUrlVal){ showStatus(progStatusBox,'err','Problem URL is required'); return; }
+  if(!/^https?:\/\/.+\..+/.test(problemUrlVal)){
     showStatus(progStatusBox,'err','Problem URL doesn\'t look valid'); return;
+  }
+  if(!problemUrlVal.includes('leetcode.com')){
+    showStatus(progStatusBox,'err','Please enter a leetcode.com problem URL'); return;
   }
   if(GAS_URL.includes('PASTE_YOUR')){ showStatus(progStatusBox,'err','App not connected to sheet yet'); return; }
 
