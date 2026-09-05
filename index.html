@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LeetTracker — squad tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F4FA;
+    --surface:#FFFFFF;
+    --surface-2:#F7F8FC;
+    --border:#E7E8F2;
+    --ink:#15162B;
+    --muted:#82849C;
+    --accent:#FF6B35;
+    --accent-soft:#FFE7DA;
+    --mint:#00C08A;
+    --mint-soft:#D9F7EC;
+    --amber:#FFB020;
+    --amber-soft:#FFF1D6;
+    --purple:#7C5CFC;
+    --purple-soft:#ECE7FF;
+    --blue:#2F8FFF;
+    --blue-soft:#E2EFFF;
+    --danger:#FF3B5C;
+    --danger-soft:#FFE3E8;
+    --sora:'Sora',sans-serif;
+    --inter:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--inter);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  .phone{
+    width:100%;
+    max-width:440px;
+    min-height:100vh;
+    background:var(--surface);
+    box-shadow:0 0 60px rgba(21,22,43,0.08);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* app bar */
+  .appbar{
+    padding:20px 20px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--surface);
+    position:sticky;top:0;z-index:5;
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .mark{
+    width:38px;height:38px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--purple));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--sora);font-weight:800;color:#fff;font-size:16px;
+    flex:none;
+  }
+  .brand-text h1{font-family:var(--sora);font-size:17px;font-weight:800;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:0;font-size:11.5px;color:var(--muted);}
+  .avatars-mini{display:flex;}
+  .avatars-mini .av{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--sora);font-size:10px;font-weight:700;color:#fff;
+    margin-left:-8px;
+  }
+
+  /* views */
+  .view{display:none;padding:18px 20px 100px;flex:1;}
+  .view.active{display:block;animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-title{font-family:var(--sora);font-size:15px;font-weight:700;margin:22px 0 12px;}
+  .section-title:first-child{margin-top:4px;}
+
+  /* avatar picker */
+  .avatar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px;}
+  .avatar-pick{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;}
+  .avatar-pick .circle{
+    width:56px;height:56px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--sora);font-weight:800;font-size:19px;color:#fff;
+    border:3px solid transparent;transition:.15s;
+  }
+  .avatar-pick.selected .circle{border-color:var(--ink);transform:scale(1.06);}
+  .avatar-pick span{font-size:12px;font-weight:600;color:var(--muted);}
+  .avatar-pick.selected span{color:var(--ink);}
+
+  /* date pills */
+  .date-card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:14px;}
+  .pill-row{display:flex;gap:8px;margin-bottom:12px;}
+  .pill{
+    flex:1;text-align:center;padding:10px 6px;border-radius:11px;
+    font-size:13px;font-weight:600;color:var(--muted);
+    background:var(--surface);border:1.5px solid var(--border);cursor:pointer;
+  }
+  .pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .date-custom input{
+    width:100%;background:var(--surface);border:1.5px solid var(--border);
+    border-radius:11px;padding:11px 12px;font-family:var(--inter);font-size:14.5px;color:var(--ink);
+  }
+
+  /* amount card (fine) */
+  .amount-card{
+    background:linear-gradient(135deg,var(--ink),#2A2C4C);
+    border-radius:16px;padding:18px 18px 16px;color:#fff;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .amount-left .lbl{font-size:11px;color:#B9BAD1;text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+  .amount-display{display:flex;align-items:baseline;gap:2px;margin-top:4px;}
+  .amount-display .rs{font-family:var(--sora);font-size:20px;font-weight:700;}
+  .amount-display input{
+    background:none;border:none;color:#fff;font-family:var(--sora);
+    font-size:32px;font-weight:800;width:110px;outline:none;padding:0;
+  }
+  .edit-toggle{
+    width:44px;height:26px;border-radius:20px;background:rgba(255,255,255,0.15);
+    position:relative;cursor:pointer;flex:none;border:1px solid rgba(255,255,255,0.25);
+  }
+  .edit-toggle::after{
+    content:'✎';font-size:10px;display:flex;align-items:center;justify-content:center;
+    position:absolute;top:2px;left:2px;width:20px;height:20px;
+    border-radius:50%;background:#fff;color:var(--ink);transition:.15s;
+  }
+  .edit-toggle.on{background:var(--accent);border-color:var(--accent);}
+  .edit-toggle.on::after{transform:translateX(18px);}
+
+  /* difficulty chips (progress) */
+  .diff-row{display:flex;gap:8px;}
+  .diff-chip{
+    flex:1;text-align:center;padding:12px 6px;border-radius:12px;
+    font-family:var(--sora);font-size:13px;font-weight:700;cursor:pointer;
+    border:1.5px solid var(--border);background:var(--surface-2);color:var(--muted);
+  }
+  .diff-chip[data-d="Easy"].active{background:var(--mint-soft);border-color:var(--mint);color:#00795A;}
+  .diff-chip[data-d="Medium"].active{background:var(--amber-soft);border-color:var(--amber);color:#8A5A00;}
+  .diff-chip[data-d="Hard"].active{background:var(--danger-soft);border-color:var(--danger);color:#C81A3C;}
+
+  .text-field{
+    width:100%;background:var(--surface-2);border:1.5px solid var(--border);
+    border-radius:14px;padding:13px 14px;font-family:var(--inter);font-size:14.5px;color:var(--ink);
+  }
+  .text-field::placeholder{color:var(--muted);}
+
+  .cta{
+    width:100%;margin-top:22px;color:#fff;border:none;border-radius:16px;
+    padding:16px;font-family:var(--sora);font-weight:700;font-size:15px;
+    display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+  }
+  .cta.fine-cta{background:var(--accent);box-shadow:0 10px 24px -8px rgba(255,107,53,0.55);}
+  .cta.progress-cta{background:var(--mint);box-shadow:0 10px 24px -8px rgba(0,192,138,0.55);}
+  .cta:disabled{opacity:.6;cursor:wait;box-shadow:none;}
+  .cta .spin{
+    width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.4);
+    border-top-color:#fff;animation:spin .7s linear infinite;display:none;
+  }
+  .cta.loading .spin{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .toast{margin-top:14px;padding:11px 14px;border-radius:12px;font-size:13px;font-weight:600;display:none;text-align:center;}
+  .toast.ok{display:block;background:var(--mint-soft);color:#00795A;}
+  .toast.err{display:block;background:var(--danger-soft);color:#C81A3C;}
+
+  /* dashboard */
+  .hero-row{display:flex;gap:10px;}
+  .hero-card{
+    flex:1;border-radius:18px;padding:16px;color:#fff;position:relative;overflow:hidden;
+  }
+  .hero-card.fines{background:linear-gradient(135deg,var(--purple),var(--accent));}
+  .hero-card.solved{background:linear-gradient(135deg,#00A379,var(--blue));}
+  .hero-card::after{
+    content:'';position:absolute;right:-26px;top:-26px;width:100px;height:100px;
+    border-radius:50%;background:rgba(255,255,255,0.12);
+  }
+  .hero-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,0.85);}
+  .hero-amt{font-family:var(--sora);font-size:26px;font-weight:800;margin-top:3px;}
+  .hero-sub{font-size:11px;color:rgba(255,255,255,0.85);margin-top:1px;}
+
+  .board-list{margin-top:12px;}
+  .board-row{
+    display:flex;align-items:center;gap:12px;
+    background:var(--surface-2);border:1px solid var(--border);
+    border-radius:14px;padding:12px 14px;margin-bottom:9px;
+  }
+  .board-row .circle{
+    width:38px;height:38px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--sora);font-weight:800;font-size:13px;color:#fff;
+  }
+  .board-row .info{flex:1;min-width:0;}
+  .board-row .name{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px;}
+  .streak-tag{
+    font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);
+    padding:2px 7px;border-radius:8px;
+  }
+  .bar-track{height:6px;background:var(--border);border-radius:4px;margin-top:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;}
+  .board-row .amt{font-family:var(--sora);font-weight:800;font-size:14.5px;flex:none;}
+  .diff-dots{display:flex;gap:4px;margin-top:5px;}
+  .diff-dots span{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;}
+  .dot-easy{background:var(--mint-soft);color:#00795A;}
+  .dot-med{background:var(--amber-soft);color:#8A5A00;}
+  .dot-hard{background:var(--danger-soft);color:#C81A3C;}
+
+  .activity-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .activity-item:last-child{border-bottom:none;}
+  .activity-item .circle{
+    width:38px;height:38px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--sora);font-weight:800;font-size:13px;color:#fff;
+  }
+  .activity-item .meta{flex:1;min-width:0;}
+  .activity-item .name-line{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px;}
+  .activity-item .sub-line{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .activity-item .tag{font-family:var(--sora);font-weight:800;font-size:12px;padding:5px 10px;border-radius:10px;flex:none;}
+  .tag-fine{color:var(--danger);background:var(--danger-soft);}
+  .tag-easy{color:#00795A;background:var(--mint-soft);}
+  .tag-medium{color:#8A5A00;background:var(--amber-soft);}
+  .tag-hard{color:#C81A3C;background:var(--danger-soft);}
+  .mini-icon{font-size:11px;}
+  .empty-state{padding:28px 10px;text-align:center;color:var(--muted);font-size:13px;}
+
+  .loading-state{display:flex;flex-direction:column;align-items:center;gap:10px;padding:32px 10px;color:var(--muted);font-size:12.5px;}
+  .loading-spin{
+    width:26px;height:26px;border-radius:50%;
+    border:3px solid var(--border);border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+  }
+  .skeleton{
+    background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);
+    background-size:400% 100%;animation:skeleton-wave 1.4s ease infinite;
+    border-radius:8px;
+  }
+  @keyframes skeleton-wave{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+
+  .seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:6px;}
+  .seg-btn{flex:1;text-align:center;padding:8px 4px;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;}
+  .seg-btn.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+
+  /* bottom nav */
+  .bottomnav{
+    position:sticky;bottom:0;left:0;right:0;
+    background:rgba(255,255,255,0.85);backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    display:flex;padding:10px 14px calc(10px + env(safe-area-inset-bottom));gap:4px;
+  }
+  .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;border-radius:12px;cursor:pointer;color:var(--muted);}
+  .navbtn.active{color:var(--accent);}
+  .navbtn.progress-active.active{color:var(--mint);}
+  .navbtn svg{width:20px;height:20px;}
+  .navbtn .lbl{font-size:10px;font-weight:700;}
+
+  footer.credit{text-align:center;padding:10px 0 2px;font-size:10.5px;color:var(--muted);}
+  footer.credit a{color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="appbar">
+    <div class="brand">
+      <div class="mark">₹</div>
+      <div class="brand-text">
+        <h1>LeetTracker</h1>
+        <p id="brandSubtitle">Alex · Sam · Jordan · Taylor</p>
+      </div>
+    </div>
+    <div class="avatars-mini" id="miniAvatars"></div>
+  </div>
+
+  <!-- FINE VIEW -->
+  <div class="view" id="view-fine">
+    <div class="section-title">Who missed it?</div>
+    <div class="avatar-grid" id="fineNameGrid"></div>
+
+    <div class="section-title">When</div>
+    <div class="date-card">
+      <div class="pill-row">
+        <div class="pill" id="fineYestChip">Yesterday</div>
+        <div class="pill" id="fineTodayChip">Today</div>
+      </div>
+      <div class="date-custom"><input type="date" id="fineDateInput" max=""></div>
+    </div>
+
+    <div class="section-title">Fine amount</div>
+    <div class="amount-card">
+      <div class="amount-left">
+        <div class="lbl">Amount due</div>
+        <div class="amount-display"><span class="rs">₹</span><input type="number" id="amountInput" value="100" max="100" readonly></div>
+      </div>
+      <div class="edit-toggle" id="amountToggle"></div>
+    </div>
+
+    <div class="section-title">Note <span style="color:var(--muted);font-weight:400;">(optional)</span></div>
+    <input type="text" class="text-field" id="noteInput" placeholder="e.g. slept through it 😅">
+
+    <button class="cta fine-cta" id="saveFineBtn">
+      <span class="spin"></span><span id="saveFineBtnLabel">Log the fine →</span>
+    </button>
+    <div class="toast" id="fineStatusBox"></div>
+  </div>
+
+  <!-- PROGRESS VIEW -->
+  <div class="view" id="view-progress">
+    <div class="section-title">Who solved it?</div>
+    <div class="avatar-grid" id="progNameGrid"></div>
+
+    <div class="section-title">When</div>
+    <div class="date-card">
+      <div class="pill-row">
+        <div class="pill" id="progTodayChip">Today</div>
+        <div class="pill" id="progYestChip">Yesterday</div>
+      </div>
+      <div class="date-custom"><input type="date" id="progDateInput" max=""></div>
+    </div>
+
+    <div class="section-title">Difficulty</div>
+    <div class="diff-row" id="diffRow">
+      <div class="diff-chip" data-d="Easy">Easy</div>
+      <div class="diff-chip" data-d="Medium">Medium</div>
+      <div class="diff-chip" data-d="Hard">Hard</div>
+    </div>
+
+    <div class="section-title">Problem URL</div>
+    <input type="text" class="text-field" id="problemUrlInput" placeholder="https://leetcode.com/problems/...">
+
+    <button class="cta progress-cta" id="saveProgBtn">
+      <span class="spin"></span><span id="saveProgBtnLabel">Log progress →</span>
+    </button>
+    <div class="toast" id="progStatusBox"></div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view active" id="view-board">
+    <div class="hero-row">
+      <div class="hero-card fines">
+        <div class="hero-lbl">Fines collected</div>
+        <div class="hero-amt" id="totalAmt">₹0</div>
+        <div class="hero-sub" id="totalCount">0 entries</div>
+      </div>
+      <div class="hero-card solved">
+        <div class="hero-lbl">Problems solved</div>
+        <div class="hero-amt" id="totalSolved">0</div>
+        <div class="hero-sub" id="totalSolvedSub">0 entries</div>
+      </div>
+    </div>
+
+    <div class="section-title">Streaks &amp; solving</div>
+    <div class="board-list" id="progressBoardList"></div>
+
+    <div class="section-title">Fine leaderboard</div>
+    <div class="board-list" id="fineBoardList"></div>
+
+    <div class="section-title">Recent activity</div>
+    <div class="seg" id="activitySeg">
+      <div class="seg-btn active" data-f="all">All</div>
+      <div class="seg-btn" data-f="fine">Fines</div>
+      <div class="seg-btn" data-f="progress">Progress</div>
+    </div>
+    <div id="entriesList"></div>
+  </div>
+
+  <div class="bottomnav">
+    <div class="navbtn progress-active" id="navProg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <div class="lbl">Progress</div>
+    </div>
+    <div class="navbtn active" id="navBoard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      <div class="lbl">Board</div>
+    </div>
+    <div class="navbtn" id="navFine">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div class="lbl">Fine</div>
+    </div>
+  </div>
+
+  <footer class="credit">synced to google sheets · <a href="#" id="sheetLink" target="_blank">open sheet</a></footer>
+</div>
+
+<script>
+/* ======================================================
+   CONFIG — paste your Apps Script Web App URL here
+====================================================== */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbza5Gf3GWIE5yh0OjCaoQmNVW1erIycyAop8FAmFkUxA827DkTzavlU6oZKXGWfHg-N/exec";
+const SHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1SGoxpSrWmtJoNehfzHYasOvt0v3lZPowZYUmEUS4Gyk/edit?usp=sharing";
+// Must match the ACCESS_TOKEN script property you set in Apps Script
+// (Project Settings -> Script Properties). Leave blank only if you
+// deliberately left ACCESS_TOKEN unset on the backend too (open access).
+const ACCESS_TOKEN = "PASTE_YOUR_ACCESS_TOKEN_HERE";
+
+/* Fallback shown before the real roster loads from the "Members" sheet tab
+   (or if the app isn't connected to a sheet yet). Once connected, the real
+   roster always wins — to add/remove/reorder people, edit the Members tab
+   directly, no code changes needed. */
+let MEMBERS = [
+  { name:"Alex",   color:"#7C5CFC" },
+  { name:"Sam",    color:"#FF6B35" },
+  { name:"Jordan", color:"#00C08A" },
+  { name:"Taylor", color:"#2F8FFF" }
+];
+function initials(n){ return n.slice(0,2).toUpperCase(); }
+function colorFor(name){ const m = MEMBERS.find(x=>x.name===name); return m ? m.color : "#82849C"; }
+
+document.getElementById('sheetLink').href = SHEET_VIEW_URL;
+
+/* block picking a future date in either form */
+(function(){
+  const todayStr = new Date().toISOString().slice(0,10);
+  document.getElementById('fineDateInput').max = todayStr;
+  document.getElementById('progDateInput').max = todayStr;
+})();
+
+/* ---------- member-dependent UI (re-run whenever the roster changes) ---------- */
+const MAX_MINI_AVATARS = 6;
+function buildNameGrid(el){
+  el.innerHTML = MEMBERS.map(m=>`
+    <div class="avatar-pick" data-name="${escapeHtml(m.name)}">
+      <div class="circle" style="background:${m.color}">${escapeHtml(initials(m.name))}</div>
+      <span>${escapeHtml(m.name)}</span>
+    </div>
+  `).join('');
+}
+const fineNameGrid = document.getElementById('fineNameGrid');
+const progNameGrid = document.getElementById('progNameGrid');
+let selectedFineName = null, selectedProgName = null;
+
+/* event delegation so re-rendering the grid (roster changes) doesn't lose click handling */
+fineNameGrid.addEventListener('click', (ev)=>{
+  const el = ev.target.closest('.avatar-pick'); if(!el) return;
+  fineNameGrid.querySelectorAll('.avatar-pick').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected'); selectedFineName = el.dataset.name;
+});
+progNameGrid.addEventListener('click', (ev)=>{
+  const el = ev.target.closest('.avatar-pick'); if(!el) return;
+  progNameGrid.querySelectorAll('.avatar-pick').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected'); selectedProgName = el.dataset.name;
+});
+
+function renderMemberUI(){
+  buildNameGrid(fineNameGrid);
+  buildNameGrid(progNameGrid);
+  // re-apply selections if the previously selected person still exists in the roster
+  if(selectedFineName){
+    const stillThere = fineNameGrid.querySelector(`[data-name="${CSS.escape(selectedFineName)}"]`);
+    if(stillThere) stillThere.classList.add('selected'); else selectedFineName = null;
+  }
+  if(selectedProgName){
+    const stillThere = progNameGrid.querySelector(`[data-name="${CSS.escape(selectedProgName)}"]`);
+    if(stillThere) stillThere.classList.add('selected'); else selectedProgName = null;
+  }
+
+  document.getElementById('brandSubtitle').textContent = MEMBERS.map(m=>m.name).join(' · ');
+
+  const shown = MEMBERS.slice(0, MAX_MINI_AVATARS);
+  const extra = MEMBERS.length - shown.length;
+  document.getElementById('miniAvatars').innerHTML =
+    shown.map(m=>`<div class="av" style="background:${m.color}">${escapeHtml(initials(m.name))}</div>`).join('')
+    + (extra > 0 ? `<div class="av" style="background:#82849C">+${extra}</div>` : '');
+}
+renderMemberUI(); // paint immediately with the fallback roster
+
+/* ---------- generic date-pill helper ---------- */
+function toISO(d){ return d.toISOString().slice(0,10); }
+function wireDatePills(dateInputEl, yestChipEl, todayChipEl, defaultOffset){
+  function setDate(offsetDays, chip){
+    const d = new Date(); d.setDate(d.getDate() + offsetDays);
+    dateInputEl.value = toISO(d);
+    yestChipEl.classList.remove('active'); todayChipEl.classList.remove('active');
+    if(chip) chip.classList.add('active');
+  }
+  todayChipEl.addEventListener('click', ()=>setDate(0, todayChipEl));
+  yestChipEl.addEventListener('click', ()=>setDate(-1, yestChipEl));
+  dateInputEl.addEventListener('change', ()=>{
+    yestChipEl.classList.remove('active'); todayChipEl.classList.remove('active');
+  });
+  if(defaultOffset === 0){ setDate(0, todayChipEl); } else { setDate(-1, yestChipEl); }
+  return setDate;
+}
+const setFineDate = wireDatePills(
+  document.getElementById('fineDateInput'),
+  document.getElementById('fineYestChip'),
+  document.getElementById('fineTodayChip'),
+  -1 // fines are logged the next day, for yesterday's miss
+);
+const setProgDate = wireDatePills(
+  document.getElementById('progDateInput'),
+  document.getElementById('progYestChip'),
+  document.getElementById('progTodayChip'),
+  0 // progress is logged same-day, for today's solve
+);
+
+/* ---------- bottom nav switching ---------- */
+const views = { fine: document.getElementById('view-fine'), progress: document.getElementById('view-progress'), board: document.getElementById('view-board') };
+const navs  = { fine: document.getElementById('navFine'), progress: document.getElementById('navProg'), board: document.getElementById('navBoard') };
+function showView(key){
+  Object.keys(views).forEach(k=>{
+    views[k].classList.toggle('active', k===key);
+    navs[k].classList.toggle('active', k===key);
+  });
+  if(key==='board') loadEntries();
+}
+navs.fine.addEventListener('click', ()=>showView('fine'));
+navs.progress.addEventListener('click', ()=>showView('progress'));
+navs.board.addEventListener('click', ()=>showView('board'));
+
+/* ---------- amount toggle (fine) ---------- */
+const amountToggle = document.getElementById('amountToggle');
+const amountInput = document.getElementById('amountInput');
+amountToggle.addEventListener('click', ()=>{
+  const on = amountToggle.classList.toggle('on');
+  amountInput.readOnly = !on;
+  if(on){ amountInput.focus(); } else { amountInput.value = 100; }
+});
+
+/* ---------- difficulty chips (progress) ---------- */
+let selectedDifficulty = null;
+document.querySelectorAll('#diffRow .diff-chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#diffRow .diff-chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active'); selectedDifficulty = el.dataset.d;
+  });
+});
+
+/* ---------- save: fine ---------- */
+const saveFineBtn = document.getElementById('saveFineBtn');
+const fineStatusBox = document.getElementById('fineStatusBox');
+saveFineBtn.addEventListener('click', async ()=>{
+  fineStatusBox.className = 'toast';
+  if(!selectedFineName){ showStatus(fineStatusBox,'err','Pick who missed it first'); return; }
+  const dateVal = document.getElementById('fineDateInput').value;
+  if(!dateVal){ showStatus(fineStatusBox,'err','Pick a date'); return; }
+  if(dateVal > todayISO()){ showStatus(fineStatusBox,'err','Date can\'t be in the future'); return; }
+  const amount = parseFloat(amountInput.value);
+  if(!amount || amount <= 0){ showStatus(fineStatusBox,'err','Enter a valid amount'); return; }
+  if(amount > 100){ showStatus(fineStatusBox,'err','Amount can\'t be more than ₹100'); return; }
+  if(GAS_URL.includes('PASTE_YOUR')){ showStatus(fineStatusBox,'err','App not connected to sheet yet'); return; }
+
+  saveFineBtn.disabled = true; saveFineBtn.classList.add('loading');
+  document.getElementById('saveFineBtnLabel').textContent = 'Saving…';
+
+  const payload = {
+    type:'fine', name: selectedFineName, date: dateVal, amount: amount,
+    note: document.getElementById('noteInput').value || ''
+  };
+  try{
+    const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if(data.ok){
+      showStatus(fineStatusBox,'ok','✓ Saved — ₹'+amount+' logged for '+selectedFineName);
+      resetFineForm();
+    } else {
+      showStatus(fineStatusBox,'err', data.error || 'Could not save, try again');
+    }
+  }catch(err){ showStatus(fineStatusBox,'err','Network error — check your connection'); }
+  saveFineBtn.disabled = false; saveFineBtn.classList.remove('loading');
+  document.getElementById('saveFineBtnLabel').textContent = 'Log the fine →';
+});
+function resetFineForm(){
+  fineNameGrid.querySelectorAll('.avatar-pick').forEach(p=>p.classList.remove('selected'));
+  selectedFineName = null;
+  document.getElementById('noteInput').value = '';
+  amountInput.value = 100; amountInput.readOnly = true; amountToggle.classList.remove('on');
+  setFineDate(-1, document.getElementById('fineYestChip'));
+}
+
+/* ---------- save: progress ---------- */
+const saveProgBtn = document.getElementById('saveProgBtn');
+const progStatusBox = document.getElementById('progStatusBox');
+saveProgBtn.addEventListener('click', async ()=>{
+  progStatusBox.className = 'toast';
+  if(!selectedProgName){ showStatus(progStatusBox,'err','Pick who solved it first'); return; }
+  const dateVal = document.getElementById('progDateInput').value;
+  if(!dateVal){ showStatus(progStatusBox,'err','Pick a date'); return; }
+  if(dateVal > todayISO()){ showStatus(progStatusBox,'err','Date can\'t be in the future'); return; }
+  if(!selectedDifficulty){ showStatus(progStatusBox,'err','Pick a difficulty'); return; }
+  const problemUrlVal = document.getElementById('problemUrlInput').value.trim();
+  if(problemUrlVal && !/^https?:\/\/.+\..+/.test(problemUrlVal)){
+    showStatus(progStatusBox,'err','Problem URL doesn\'t look valid'); return;
+  }
+  if(GAS_URL.includes('PASTE_YOUR')){ showStatus(progStatusBox,'err','App not connected to sheet yet'); return; }
+
+  saveProgBtn.disabled = true; saveProgBtn.classList.add('loading');
+  document.getElementById('saveProgBtnLabel').textContent = 'Saving…';
+
+  const payload = {
+    type:'progress', name: selectedProgName, date: dateVal, difficulty: selectedDifficulty,
+    problemUrl: problemUrlVal
+  };
+  try{
+    const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if(data.ok){
+      showStatus(progStatusBox,'ok','✓ Logged '+selectedDifficulty+' solve for '+selectedProgName);
+      resetProgForm();
+    } else {
+      showStatus(progStatusBox,'err', data.error || 'Could not save, try again');
+    }
+  }catch(err){ showStatus(progStatusBox,'err','Network error — check your connection'); }
+  saveProgBtn.disabled = false; saveProgBtn.classList.remove('loading');
+  document.getElementById('saveProgBtnLabel').textContent = 'Log progress →';
+});
+function resetProgForm(){
+  progNameGrid.querySelectorAll('.avatar-pick').forEach(p=>p.classList.remove('selected'));
+  selectedProgName = null;
+  document.querySelectorAll('#diffRow .diff-chip').forEach(c=>c.classList.remove('active'));
+  selectedDifficulty = null;
+  document.getElementById('problemUrlInput').value = '';
+  setProgDate(0, document.getElementById('progTodayChip'));
+}
+
+function showStatus(box,type,msg){ box.className = 'toast ' + type; box.textContent = msg; }
+
+/* ---------- dashboard ---------- */
+let allFines = [], allProgress = [];
+let activityFilter = 'all';
+document.querySelectorAll('#activitySeg .seg-btn').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#activitySeg .seg-btn').forEach(s=>s.classList.remove('active'));
+    el.classList.add('active'); activityFilter = el.dataset.f;
+    renderActivity();
+  });
+});
+
+async function loadEntries(){
+  const listEl = document.getElementById('entriesList');
+  if(GAS_URL.includes('PASTE_YOUR')){
+    listEl.innerHTML = '<div class="empty-state">Connect the sheet in SETUP.md to see entries</div>';
+    return;
+  }
+  showLoadingState();
+  try{
+    const res = await fetch(GAS_URL + '?action=list');
+    const data = await res.json();
+    if(data.members && data.members.length){
+      MEMBERS = data.members;
+      renderMemberUI();
+    }
+    allFines = data.fines || [];
+    allProgress = data.progress || [];
+    renderDashboard();
+  }catch(err){
+    listEl.innerHTML = '<div class="empty-state">Could not load entries — pull to refresh</div>';
+  }
+}
+
+function showLoadingState(){
+  document.getElementById('totalAmt').innerHTML = '<span class="skeleton" style="display:inline-block;width:60px;height:26px;"></span>';
+  document.getElementById('totalCount').innerHTML = '<span class="skeleton" style="display:inline-block;width:70px;height:12px;"></span>';
+  document.getElementById('totalSolved').innerHTML = '<span class="skeleton" style="display:inline-block;width:40px;height:26px;"></span>';
+  document.getElementById('totalSolvedSub').innerHTML = '<span class="skeleton" style="display:inline-block;width:70px;height:12px;"></span>';
+  const spinner = '<div class="loading-state"><div class="loading-spin"></div>Loading…</div>';
+  document.getElementById('progressBoardList').innerHTML = spinner;
+  document.getElementById('fineBoardList').innerHTML = spinner;
+  document.getElementById('entriesList').innerHTML = spinner;
+}
+
+function todayISO(){ return toISO(new Date()); }
+function yestISO(){ return toISO(new Date(Date.now()-86400000)); }
+function formatRelativeDate(iso){
+  if(iso === todayISO()) return 'Today';
+  if(iso === yestISO()) return 'Yesterday';
+  return iso;
+}
+
+function computeStreak(name){
+  const dates = new Set(allProgress.filter(e=>e.name===name).map(e=>e.date));
+  let streak = 0;
+  let cursor = new Date();
+  // if nothing logged today, start counting from yesterday
+  if(!dates.has(toISO(cursor))) cursor.setDate(cursor.getDate()-1);
+  while(dates.has(toISO(cursor))){
+    streak++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return streak;
+}
+
+function renderDashboard(){
+  const totalFines = allFines.reduce((s,e)=>s+Number(e.amount||0),0);
+  document.getElementById('totalAmt').textContent = '₹'+totalFines;
+  document.getElementById('totalCount').textContent = allFines.length + ' entries';
+  document.getElementById('totalSolved').textContent = allProgress.length;
+  document.getElementById('totalSolvedSub').textContent = allProgress.length + ' entries';
+
+  /* fine leaderboard */
+  const finePerPerson = {};
+  MEMBERS.forEach(m=>finePerPerson[m.name]=0);
+  allFines.forEach(e=>{ finePerPerson[e.name] = (finePerPerson[e.name]||0) + Number(e.amount||0); });
+  const maxFine = Math.max(1, ...Object.values(finePerPerson));
+  const fineBoardEl = document.getElementById('fineBoardList');
+  const sortedByFine = [...MEMBERS].sort((a,b)=>finePerPerson[b.name]-finePerPerson[a.name]);
+  fineBoardEl.innerHTML = sortedByFine.map(m=>`
+    <div class="board-row">
+      <div class="circle" style="background:${m.color}">${escapeHtml(initials(m.name))}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(m.name)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(finePerPerson[m.name]/maxFine*100)}%;background:${m.color}"></div></div>
+      </div>
+      <div class="amt">₹${finePerPerson[m.name]}</div>
+    </div>
+  `).join('');
+
+  /* progress / streak leaderboard */
+  const solvedPerPerson = {}, diffPerPerson = {};
+  MEMBERS.forEach(m=>{ solvedPerPerson[m.name]=0; diffPerPerson[m.name]={Easy:0,Medium:0,Hard:0}; });
+  allProgress.forEach(e=>{
+    solvedPerPerson[e.name] = (solvedPerPerson[e.name]||0) + 1;
+    if(diffPerPerson[e.name] && diffPerPerson[e.name][e.difficulty] !== undefined){
+      diffPerPerson[e.name][e.difficulty]++;
+    }
+  });
+  const streaks = {};
+  MEMBERS.forEach(m=> streaks[m.name] = computeStreak(m.name) );
+  const progBoardEl = document.getElementById('progressBoardList');
+  const sortedByStreak = [...MEMBERS].sort((a,b)=>streaks[b.name]-streaks[a.name]);
+  progBoardEl.innerHTML = sortedByStreak.map(m=>`
+    <div class="board-row">
+      <div class="circle" style="background:${m.color}">${escapeHtml(initials(m.name))}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(m.name)} ${streaks[m.name] > 0 ? `<span class="streak-tag">🔥 ${streaks[m.name]}d</span>` : ''}</div>
+        <div class="diff-dots">
+          <span class="dot-easy">E ${diffPerPerson[m.name].Easy}</span>
+          <span class="dot-med">M ${diffPerPerson[m.name].Medium}</span>
+          <span class="dot-hard">H ${diffPerPerson[m.name].Hard}</span>
+        </div>
+      </div>
+      <div class="amt">${solvedPerPerson[m.name]}</div>
+    </div>
+  `).join('');
+
+  renderActivity();
+}
+
+function difficultyTagClass(d){
+  if(d==='Easy') return 'tag-easy';
+  if(d==='Medium') return 'tag-medium';
+  if(d==='Hard') return 'tag-hard';
+  return 'tag-easy';
+}
+
+/* motivational nudges shown instead of a bare "nothing here" when a section has no
+   entries yet — different flavor depending on which activity tab is empty */
+const EMPTY_MESSAGES_ALL = [
+  "🧠 Every LeetCoder starts at zero submissions. Log today's problem and break the ice.",
+  "🚀 The board is a blank slate — first commit gets the bragging rights.",
+  "📈 Consistency beats intensity. One solve a day adds up faster than you think.",
+  "🔥 No streaks yet — someone's about to start one. Might as well be you."
+];
+const EMPTY_MESSAGES_FINE = [
+  "😇 No fines yet — either everyone's grinding, or nobody's confessed. Stay honest!",
+  "💸 A clean fine sheet. Let's keep it that way — solve today's problem!",
+  "🎉 Zero fines so far. The squad's off to a strong start."
+];
+const EMPTY_MESSAGES_PROGRESS = [
+  "🧩 No solves logged yet. Pick any difficulty and get the first one on the board.",
+  "🏁 Every streak starts with a single Easy. Go log one.",
+  "💡 The daily problem won't solve itself — be the first entry today."
+];
+function emptyStateMessage(filter){
+  const pool = filter === 'fine' ? EMPTY_MESSAGES_FINE
+             : filter === 'progress' ? EMPTY_MESSAGES_PROGRESS
+             : EMPTY_MESSAGES_ALL;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function renderActivity(){
+  const listEl = document.getElementById('entriesList');
+  let combined = [];
+  if(activityFilter === 'all' || activityFilter === 'fine'){
+    combined = combined.concat(allFines.map(e=>({...e, _kind:'fine'})));
+  }
+  if(activityFilter === 'all' || activityFilter === 'progress'){
+    combined = combined.concat(allProgress.map(e=>({...e, _kind:'progress'})));
+  }
+  combined.sort((a,b)=> new Date(b.timestamp) - new Date(a.timestamp));
+
+  if(combined.length === 0){
+    listEl.innerHTML = `<div class="empty-state">${emptyStateMessage(activityFilter)}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = combined.map(e=>{
+    const safeName = escapeHtml(e.name);
+    if(e._kind === 'fine'){
+      return `
+        <div class="activity-item">
+          <div class="circle" style="background:${colorFor(e.name)}">${initials(e.name)}</div>
+          <div class="meta">
+            <div class="name-line"><span class="mini-icon">💸</span>${safeName}</div>
+            <div class="sub-line">${formatRelativeDate(e.date)}${e.note ? ' · ' + escapeHtml(e.note) : ''}</div>
+          </div>
+          <div class="tag tag-fine">₹${e.amount}</div>
+        </div>`;
+    } else {
+      const safeUrl = safeHref_(e.problemUrl);
+      const urlPart = safeUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener" style="color:var(--blue);">link</a>` : '';
+      return `
+        <div class="activity-item">
+          <div class="circle" style="background:${colorFor(e.name)}">${initials(e.name)}</div>
+          <div class="meta">
+            <div class="name-line"><span class="mini-icon">✅</span>${safeName}</div>
+            <div class="sub-line">${formatRelativeDate(e.date)}${urlPart ? ' · ' + urlPart : ''}</div>
+          </div>
+          <div class="tag ${difficultyTagClass(e.difficulty)}">${e.difficulty}</div>
+        </div>`;
+    }
+  }).join('');
+}
+
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str == null ? '' : String(str); return d.innerHTML; }
+
+// Only allow http(s) URLs to be used as href values, and HTML-escape them —
+// blocks both javascript: URI injection and attribute-breakout XSS via a
+// crafted problemUrl value submitted directly to the API.
+function safeHref_(url){
+  if(!url) return '';
+  const trimmed = String(url).trim();
+  if(!/^https?:\/\//i.test(trimmed)) return '';
+  return escapeHtml(trimmed);
+}
+
+loadEntries();
+</script>
+</body>
+</html>
