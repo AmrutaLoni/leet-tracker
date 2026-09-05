@@ -553,7 +553,7 @@ saveFineBtn.addEventListener('click', async ()=>{
 
   const payload = {
     type:'fine', name: selectedFineName, date: dateVal, amount: amount,
-    note: document.getElementById('noteInput').value || ''
+    note: document.getElementById('noteInput').value || '', token: ACCESS_TOKEN
   };
   try{
     const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
@@ -597,7 +597,7 @@ saveProgBtn.addEventListener('click', async ()=>{
 
   const payload = {
     type:'progress', name: selectedProgName, date: dateVal, difficulty: selectedDifficulty,
-    problemUrl: problemUrlVal
+    problemUrl: problemUrlVal, token: ACCESS_TOKEN
   };
   try{
     const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
